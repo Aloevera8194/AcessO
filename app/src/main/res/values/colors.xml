@@ -1,0 +1,9 @@
+<resources>
+    <color name="primary">#1E4E8C</color>
+    <color name="primary_dark">#12315A</color>
+    <color name="accent">#F2994A</color>
+    <color name="background">#F5F7FA</color>
+    <color name="text_dark">#1B2733</color>
+    <color name="sucesso">#27AE60</color>
+    <color name="falha">#EB5757</color>
+</resources>
