@@ -301,7 +301,7 @@ class CadastroActivity : AppCompatActivity() {
         employeeNo = editCodigo.text.toString().trim(),
         apartamento = editApartamento.text.toString().trim(),
         nome = editNome.text.toString().trim(),
-        cartao = editCartao.text.toString().trim(),
+        cartoes = MutableList(5) { i -> if (i == 0) editCartao.text.toString().trim() else "" },
         validadeInicio = dataInicio,
         validadeFim = dataFim,
         fotoCaminho = caminhoFotoPreparada

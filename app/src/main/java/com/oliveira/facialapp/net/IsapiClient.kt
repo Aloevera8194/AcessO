@@ -198,13 +198,14 @@ class IsapiClient(private val predio: Predio, private val equipamento: Equipamen
     }
 
     fun cadastrarCartao(u: UsuarioCadastro) {
-        if (u.cartao.isBlank()) return
-        val json = """
-            {"CardInfo":{"employeeNo":"${u.employeeNo}","cardNo":"${u.cartao}","cardType":"normalCard"}}
-        """.trimIndent()
-        val body = json.toRequestBody("application/json".toMediaType())
-        val resposta = executarComDigest("/ISAPI/AccessControl/CardInfo/Record?format=json", "POST", body)
-        validarResposta(resposta, "Cadastrar cartão")
+        for (cartao in u.cartoes.filter { it.isNotBlank() }) {
+            val json = """
+                {"CardInfo":{"employeeNo":"${u.employeeNo}","cardNo":"$cartao","cardType":"normalCard"}}
+            """.trimIndent()
+            val body = json.toRequestBody("application/json".toMediaType())
+            val resposta = executarComDigest("/ISAPI/AccessControl/CardInfo/Record?format=json", "POST", body)
+            validarResposta(resposta, "Cadastrar cartão")
+        }
     }
 
     fun enviarFoto(u: UsuarioCadastro) {
