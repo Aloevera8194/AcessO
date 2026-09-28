@@ -4,32 +4,50 @@ import java.util.UUID
 
 data class Equipamento(
     var id: String = UUID.randomUUID().toString(),
-    var nome: String = "",           // apelido, ex: "Catraca entrada"
+    var nome: String = "",
     var porta: String = "80",
-    var usuario: String = "",        // vazio = usa o usuário padrão do prédio
-    var senha: String = ""           // vazio = usa a senha padrão do prédio
+    var usuario: String = "",
+    var senha: String = ""
+)
+
+data class IduhfConfig(
+    var habilitado: Boolean = false,
+    var ip: String = "",
+    var porta: String = "80",
+    var usuario: String = "",
+    var senha: String = ""
 )
 
 data class Predio(
     var id: String = UUID.randomUUID().toString(),
     var nome: String = "",
-    var ip: String = "",             // IP fixo do prédio, compartilhado pelos equipamentos
+    var ip: String = "",
     var usuarioPadrao: String = "admin",
     var senhaPadrao: String = "",
-    var equipamentos: MutableList<Equipamento> = mutableListOf()
+    var equipamentos: MutableList<Equipamento> = mutableListOf(),
+    var iduhf: IduhfConfig = IduhfConfig()
 )
 
-fun Equipamento.usuarioEfetivo(predio: Predio): String = usuario.ifBlank { predio.usuarioPadrao }
-fun Equipamento.senhaEfetiva(predio: Predio): String = senha.ifBlank { predio.senhaPadrao }
+fun Equipamento.usuarioEfetivo(predio: Predio): String =
+    usuario.ifBlank { predio.usuarioPadrao }
+
+fun Equipamento.senhaEfetiva(predio: Predio): String =
+    senha.ifBlank { predio.senhaPadrao }
+
+data class TagUhf(
+    var area: String = "",
+    var id: String = ""
+)
 
 data class UsuarioCadastro(
     var employeeNo: String = "",
     var apartamento: String = "",
     var nome: String = "",
-    var cartao: String = "",
-    var validadeInicio: String = "",  // formato ISAPI: yyyy-MM-ddTHH:mm:ss
+    var cartoes: MutableList<String> = MutableList(5) { "" },
+    var tagsUhf: MutableList<TagUhf> = MutableList(5) { TagUhf() },
+    var validadeInicio: String = "",
     var validadeFim: String = "",
-    var fotoCaminho: String = ""      // caminho local do arquivo jpg já preparado
+    var fotoCaminho: String = ""
 )
 
 enum class ResultadoStatus { SUCESSO, FALHA }

@@ -189,13 +189,20 @@ class CadastroActivity : AppCompatActivity() {
 
     private fun mostrarQr(codigo: String) {
         val bitmap = com.oliveira.facialapp.data.QrUtils.gerarQr(codigo)
-        val imageView = android.widget.ImageView(this)
-        imageView.setImageBitmap(bitmap)
-        imageView.setPadding(48, 24, 48, 24)
+        val imageView = android.widget.ImageView(this).apply {
+            setImageBitmap(bitmap)
+            scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+            adjustViewBounds = true
+            setPadding(8, 8, 8, 8)
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
 
         AlertDialog.Builder(this)
             .setTitle("QR do cartão $codigo")
-            .setMessage("Teste aproximando essa tela do leitor do equipamento. Ainda não confirmado se funciona sem o Hik-Connect Teams — é justamente o que estamos testando.")
+            .setMessage("Aproxime a tela do celular da câmera do Controle de acesso.")
             .setView(imageView)
             .setPositiveButton("Compartilhar") { _, _ -> compartilharQr(bitmap, codigo) }
             .setNegativeButton("Fechar", null)
