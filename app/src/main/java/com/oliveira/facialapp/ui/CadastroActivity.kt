@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.View
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ImageView
@@ -32,6 +33,7 @@ import com.oliveira.facialapp.model.Equipamento
 import com.oliveira.facialapp.model.Predio
 import com.oliveira.facialapp.model.ResultadoEnvio
 import com.oliveira.facialapp.model.ResultadoStatus
+import com.oliveira.facialapp.model.TagUhf
 import com.oliveira.facialapp.model.UsuarioCadastro
 import com.oliveira.facialapp.net.IsapiClient
 import com.oliveira.facialapp.net.IduhfClient
@@ -67,6 +69,11 @@ class CadastroActivity : AppCompatActivity() {
     private lateinit var btnValidadeFim: com.google.android.material.button.MaterialButton
     private lateinit var containerEquipamentos: LinearLayout
     private lateinit var containerResultados: LinearLayout
+    private lateinit var containerCartaoRow: View
+    private lateinit var textTagsUhfTitulo: View
+    private lateinit var containerTagsUhf: LinearLayout
+
+    private val editsTagsUhf = mutableListOf<EditText>()
 
     private var caminhoFotoPreparada: String = ""
     private var dataInicio = ""
@@ -102,7 +109,6 @@ class CadastroActivity : AppCompatActivity() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         toolbar.setNavigationOnClickListener { finish() }
-
         modoEdicao = intent.getBooleanExtra(EXTRA_MODO_EDICAO, false)
         equipamentoIdAlvo = intent.getStringExtra(EXTRA_EQUIPAMENTO_ID_ALVO)
         if (modoEdicao) toolbar.title = "Editar cadastro"
@@ -116,6 +122,9 @@ class CadastroActivity : AppCompatActivity() {
         btnValidadeFim = findViewById(R.id.btnValidadeFim)
         containerEquipamentos = findViewById(R.id.containerEquipamentos)
         containerResultados = findViewById(R.id.containerResultados)
+        containerCartaoRow = findViewById(R.id.containerCartaoRow)
+        textTagsUhfTitulo = findViewById(R.id.textTagsUhfTitulo)
+        containerTagsUhf = findViewById(R.id.containerTagsUhf)
 
         if (modoEdicao) {
             editApartamento.setText(intent.getStringExtra(EXTRA_APARTAMENTO) ?: "")
@@ -151,20 +160,20 @@ class CadastroActivity : AppCompatActivity() {
         btnValidadeInicio.setOnClickListener { abrirSeletorData(true) }
         btnValidadeFim.setOnClickListener { abrirSeletorData(false) }
 
-        findViewById<android.view.View>(R.id.btnTirarFoto).setOnClickListener {
+        findViewById<View>(R.id.btnTirarFoto).setOnClickListener {
             val arquivo = FotoUtils.novoArquivoCamera(this)
             val uri = FileProvider.getUriForFile(this, "com.oliveira.facialapp.fileprovider", arquivo)
             uriCameraTemp = uri
             tirarFoto.launch(uri)
         }
-        findViewById<android.view.View>(R.id.btnGaleria).setOnClickListener {
+        findViewById<View>(R.id.btnGaleria).setOnClickListener {
             escolherDaGaleria.launch("image/*")
         }
 
         montarChecklistEquipamentos()
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
-        findViewById<android.view.View>(R.id.btnLerNfc).setOnClickListener {
+        findViewById<View>(R.id.btnLerNfc).setOnClickListener {
             if (nfcAdapter == null) {
                 Toast.makeText(this, "Este celular não tem NFC", Toast.LENGTH_SHORT).show()
             } else if (nfcAdapter?.isEnabled == false) {
@@ -174,7 +183,7 @@ class CadastroActivity : AppCompatActivity() {
             }
         }
 
-        findViewById<android.view.View>(R.id.btnGerarQr).setOnClickListener {
+        findViewById<View>(R.id.btnGerarQr).setOnClickListener {
             val cartao = editCartao.text.toString().trim()
             if (cartao.isBlank()) {
                 Toast.makeText(this, "Preencha o número do cartão primeiro (o QR usa esse número)", Toast.LENGTH_LONG).show()
@@ -183,7 +192,7 @@ class CadastroActivity : AppCompatActivity() {
             }
         }
 
-        findViewById<android.view.View>(R.id.btnEnviar).setOnClickListener {
+        findViewById<View>(R.id.btnEnviar).setOnClickListener {
             enviarCadastro()
         }
     }
@@ -280,6 +289,7 @@ class CadastroActivity : AppCompatActivity() {
 
     private fun montarChecklistEquipamentos() {
         containerEquipamentos.removeAllViews()
+        val checkboxes = mutableListOf<CheckBox>()
         predio.equipamentos.groupBy { it.fabricante }.forEach { (fabricante, lista) ->
             val titulo = TextView(this)
             titulo.text = fabricante
@@ -289,31 +299,69 @@ class CadastroActivity : AppCompatActivity() {
             lista.forEach { eq ->
                 val cb = CheckBox(this)
                 cb.text = "${eq.nome}  (porta ${eq.porta})"
-                cb.isChecked = if (modoEdicao) eq.id == equipamentoIdAlvo else true
+                cb.isChecked = if (modoEdicao) eq.id == equipamentoIdAlvo else false
                 cb.tag = eq.id
                 containerEquipamentos.addView(cb)
+                checkboxes.add(cb)
             }
+        }
+        checkboxes.forEach { cb ->
+            cb.setOnCheckedChangeListener { _, _ -> atualizarEstadoChecklist(checkboxes) }
+        }
+        atualizarEstadoChecklist(checkboxes)
+    }
+
+    private fun fabricanteDoCheckbox(cb: CheckBox): String =
+        predio.equipamentos.find { it.id == cb.tag }?.fabricante ?: ""
+
+    private fun atualizarEstadoChecklist(checkboxes: List<CheckBox>) {
+        val marcados = checkboxes.filter { it.isChecked }
+        val fabricanteAtivo = marcados.firstOrNull()?.let { fabricanteDoCheckbox(it) }
+        checkboxes.forEach { cb ->
+            cb.isEnabled = fabricanteAtivo == null || fabricanteDoCheckbox(cb) == fabricanteAtivo
+        }
+        val usaUhf = fabricanteAtivo == "Control iD"
+        containerTagsUhf.visibility = if (usaUhf) View.VISIBLE else View.GONE
+        textTagsUhfTitulo.visibility = if (usaUhf) View.VISIBLE else View.GONE
+        containerCartaoRow.visibility = if (usaUhf) View.GONE else View.VISIBLE
+        if (usaUhf && editsTagsUhf.isEmpty()) montarCamposTagsUhf()
+    }
+
+    private fun montarCamposTagsUhf() {
+        containerTagsUhf.removeAllViews()
+        editsTagsUhf.clear()
+        for (i in 1..5) {
+            val edit = EditText(this)
+            edit.hint = "TAG UHF $i"
+            containerTagsUhf.addView(edit)
+            editsTagsUhf.add(edit)
         }
     }
 
     private fun equipamentosSelecionados(): List<Equipamento> {
         val idsMarcados = mutableSetOf<String>()
         for (i in 0 until containerEquipamentos.childCount) {
-            val cb = containerEquipamentos.getChildAt(i) as CheckBox
-            if (cb.isChecked) idsMarcados.add(cb.tag as String)
+            val view = containerEquipamentos.getChildAt(i)
+            if (view is CheckBox && view.isChecked) idsMarcados.add(view.tag as String)
         }
         return predio.equipamentos.filter { it.id in idsMarcados }
     }
 
-    private fun montarUsuarioCadastro(): UsuarioCadastro = UsuarioCadastro(
-        employeeNo = editCodigo.text.toString().trim(),
-        apartamento = editApartamento.text.toString().trim(),
-        nome = editNome.text.toString().trim(),
-        cartoes = MutableList(5) { i -> if (i == 0) editCartao.text.toString().trim() else "" },
-        validadeInicio = dataInicio,
-        validadeFim = dataFim,
-        fotoCaminho = caminhoFotoPreparada
-    )
+    private fun montarUsuarioCadastro(): UsuarioCadastro {
+        val usaUhf = containerTagsUhf.visibility == View.VISIBLE
+        return UsuarioCadastro(
+            employeeNo = editCodigo.text.toString().trim(),
+            apartamento = editApartamento.text.toString().trim(),
+            nome = editNome.text.toString().trim(),
+            cartoes = if (usaUhf) MutableList(5) { "" }
+                      else MutableList(5) { i -> if (i == 0) editCartao.text.toString().trim() else "" },
+            tagsUhf = if (usaUhf) MutableList(5) { i -> TagUhf(id = editsTagsUhf.getOrNull(i)?.text?.toString()?.trim() ?: "") }
+                      else MutableList(5) { TagUhf() },
+            validadeInicio = dataInicio,
+            validadeFim = dataFim,
+            fotoCaminho = caminhoFotoPreparada
+        )
+    }
 
     private fun enviarCadastro() {
         val selecionados = equipamentosSelecionados()
