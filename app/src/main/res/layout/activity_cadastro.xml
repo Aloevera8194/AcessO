@@ -85,6 +85,7 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <LinearLayout
+                android:id="@+id/containerCartaoRow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
@@ -115,6 +116,23 @@
                     android:layout_marginStart="8dp"
                     android:text="QR" />
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/textTagsUhfTitulo"
+                android:text="TAGs UHF (Control iD)"
+                android:textStyle="bold"
+                android:layout_marginTop="12dp"
+                android:visibility="gone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <LinearLayout
+                android:id="@+id/containerTagsUhf"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:layout_marginTop="4dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
