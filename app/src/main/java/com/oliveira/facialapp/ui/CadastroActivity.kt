@@ -34,6 +34,7 @@ import com.oliveira.facialapp.model.ResultadoEnvio
 import com.oliveira.facialapp.model.ResultadoStatus
 import com.oliveira.facialapp.model.UsuarioCadastro
 import com.oliveira.facialapp.net.IsapiClient
+import com.oliveira.facialapp.net.IduhfClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -279,12 +280,19 @@ class CadastroActivity : AppCompatActivity() {
 
     private fun montarChecklistEquipamentos() {
         containerEquipamentos.removeAllViews()
-        predio.equipamentos.forEach { eq ->
-            val cb = CheckBox(this)
-            cb.text = "${eq.nome}  (porta ${eq.porta})"
-            cb.isChecked = if (modoEdicao) eq.id == equipamentoIdAlvo else true
-            cb.tag = eq.id
-            containerEquipamentos.addView(cb)
+        predio.equipamentos.groupBy { it.fabricante }.forEach { (fabricante, lista) ->
+            val titulo = TextView(this)
+            titulo.text = fabricante
+            titulo.setTypeface(null, android.graphics.Typeface.BOLD)
+            titulo.setPadding(0, 16, 0, 4)
+            containerEquipamentos.addView(titulo)
+            lista.forEach { eq ->
+                val cb = CheckBox(this)
+                cb.text = "${eq.nome}  (porta ${eq.porta})"
+                cb.isChecked = if (modoEdicao) eq.id == equipamentoIdAlvo else true
+                cb.tag = eq.id
+                containerEquipamentos.addView(cb)
+            }
         }
     }
 
@@ -337,10 +345,18 @@ class CadastroActivity : AppCompatActivity() {
 
     private fun enviarParaUmEquipamento(eq: Equipamento, usuario: UsuarioCadastro): ResultadoEnvio {
         return try {
-            val cliente = IsapiClient(predio, eq)
-            if (modoEdicao) cliente.atualizarUsuario(usuario) else cliente.criarUsuario(usuario)
-            cliente.cadastrarCartao(usuario)
-            cliente.enviarFoto(usuario)
+            when (eq.fabricante) {
+                "Control iD" -> {
+                    val cliente = IduhfClient(predio, eq)
+                    if (modoEdicao) cliente.atualizarUsuario(usuario) else cliente.criarUsuario(usuario)
+                }
+                else -> {
+                    val cliente = IsapiClient(predio, eq)
+                    if (modoEdicao) cliente.atualizarUsuario(usuario) else cliente.criarUsuario(usuario)
+                    cliente.cadastrarCartao(usuario)
+                    cliente.enviarFoto(usuario)
+                }
+            }
             ResultadoEnvio(eq, ResultadoStatus.SUCESSO, if (modoEdicao) "Atualizado com sucesso" else "Cadastrado com sucesso")
         } catch (e: Exception) {
             ResultadoEnvio(eq, ResultadoStatus.FALHA, e.message ?: "Falha desconhecida")

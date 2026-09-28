@@ -7,16 +7,18 @@ data class Equipamento(
     var nome: String = "",
     var porta: String = "80",
     var usuario: String = "",
-    var senha: String = ""
+    var senha: String = "",
+    var fabricante: String = "Hikvision",
+    var modelo: String = ""
 )
 
-data class IduhfConfig(
-    var habilitado: Boolean = false,
-    var ip: String = "",
-    var porta: String = "80",
-    var usuario: String = "",
-    var senha: String = ""
-)
+object EquipamentoCatalogo {
+    val modelosPorFabricante: LinkedHashMap<String, List<String>> = linkedMapOf(
+        "Hikvision" to listOf("Catraca / Facial (ISAPI)"),
+        "Control iD" to listOf("iDUHF (leitor UHF)")
+    )
+    val fabricantes: List<String> = modelosPorFabricante.keys.toList()
+}
 
 data class Predio(
     var id: String = UUID.randomUUID().toString(),
@@ -24,8 +26,7 @@ data class Predio(
     var ip: String = "",
     var usuarioPadrao: String = "admin",
     var senhaPadrao: String = "",
-    var equipamentos: MutableList<Equipamento> = mutableListOf(),
-    var iduhf: IduhfConfig = IduhfConfig()
+    var equipamentos: MutableList<Equipamento> = mutableListOf()
 )
 
 fun Equipamento.usuarioEfetivo(predio: Predio): String =
