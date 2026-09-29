@@ -158,6 +158,28 @@ class IsapiClient(private val predio: Predio, private val equipamento: Equipamen
         return encontrados
     }
 
+    /** Busca os cartões já cadastrados para um usuário específico neste equipamento. */
+    fun buscarCartoesDoUsuario(employeeNo: String): List<String> {
+        if (employeeNo.isBlank()) return emptyList()
+        val corpo = """
+            {"CardInfoSearchCond":{"searchID":"1","searchResultPosition":0,"maxResults":30,"EmployeeNoList":[{"employeeNo":"$employeeNo"}]}}
+        """.trimIndent().toRequestBody("application/json".toMediaType())
+        val resposta = try {
+            executarComDigest("/ISAPI/AccessControl/CardInfo/Search?format=json", "POST", corpo)
+        } catch (e: Exception) {
+            return emptyList()
+        }
+        val json = try { JSONObject(resposta) } catch (e: JSONException) { return emptyList() }
+        val busca = json.optJSONObject("CardInfoSearch") ?: return emptyList()
+        val lista = busca.optJSONArray("CardInfo") ?: return emptyList()
+        val cartoes = mutableListOf<String>()
+        for (i in 0 until lista.length()) {
+            val cardNo = lista.getJSONObject(i).optString("cardNo", "")
+            if (cardNo.isNotBlank()) cartoes.add(cardNo)
+        }
+        return cartoes
+    }
+
     fun atualizarUsuario(u: UsuarioCadastro) {
         val json = """
             {"UserInfo":{
