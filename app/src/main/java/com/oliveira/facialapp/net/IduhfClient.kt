@@ -132,4 +132,38 @@ class IduhfClient(private val predio: Predio, private val equipamento: Equipamen
         atualizarDadosUsuario(session, userId, u)
         substituirTagsUhf(session, userId, u)
     }
+
+    /** Busca usuários cujo registration comece com o apartamento OU cujo nome contenha o texto. */
+    fun buscarPorApartamento(query: String): List<Pair<String, String>> {
+        val session = login()
+        val queryLimpo = query.trim()
+        val aptoLimpo = queryLimpo.filter { it.isDigit() }
+
+        val corpo = JSONObject()
+            .put("object", "users")
+            .put("fields", JSONArray().put("id").put("registration").put("name"))
+        val resposta = post("/load_objects.fcgi", corpo, session)
+        val lista = resposta.optJSONArray("users") ?: return emptyList()
+
+        val encontrados = mutableListOf<Pair<String, String>>()
+        for (i in 0 until lista.length()) {
+            val item = lista.getJSONObject(i)
+            val registration = item.optString("registration", "")
+            val nome = item.optString("name", "")
+            val bateApto = aptoLimpo.isNotBlank() && registration.startsWith(aptoLimpo)
+            val bateNome = queryLimpo.isNotBlank() && nome.contains(queryLimpo, ignoreCase = true)
+            if (queryLimpo.isBlank() || bateApto || bateNome) {
+                encontrados.add(registration to nome)
+            }
+        }
+        return encontrados
+    }
+
+    fun excluirUsuario(employeeNo: String) {
+        val session = login()
+        val corpo = JSONObject()
+            .put("object", "users")
+            .put("where", JSONObject().put("users", JSONObject().put("registration", employeeNo)))
+        post("/destroy_objects.fcgi", corpo, session)
+    }
 }
