@@ -17,6 +17,7 @@ import com.oliveira.facialapp.data.HistoricoStorage
 import com.oliveira.facialapp.data.ModoResidenteConfig
 import com.oliveira.facialapp.model.Equipamento
 import com.oliveira.facialapp.model.Predio
+import com.oliveira.facialapp.net.IduhfClient
 import com.oliveira.facialapp.net.IsapiClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -36,9 +37,6 @@ class BuscaActivity : AppCompatActivity() {
     private lateinit var editApartamento: TextInputEditText
     private lateinit var containerChecklist: LinearLayout
 
-    private val equipamentosBuscaveis: List<Equipamento>
-        get() = predio.equipamentos.filter { it.fabricante != "Control iD" }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_busca)
@@ -56,6 +54,7 @@ class BuscaActivity : AppCompatActivity() {
         toolbar.setNavigationOnClickListener { finish() }
 
         editApartamento = findViewById(R.id.editApartamentoBusca)
+        editApartamento.hint = "Apartamento ou nome"
         containerChecklist = findViewById(R.id.containerChecklistBusca)
 
         montarChecklistEquipamentos()
@@ -85,9 +84,9 @@ class BuscaActivity : AppCompatActivity() {
 
     private fun montarChecklistEquipamentos() {
         containerChecklist.removeAllViews()
-        val lista = equipamentosBuscaveis
+        val lista = predio.equipamentos
         if (lista.isEmpty()) {
-            containerChecklist.addView(linhaTexto("Nenhum equipamento com busca disponível neste prédio"))
+            containerChecklist.addView(linhaTexto("Nenhum equipamento cadastrado neste prédio"))
             return
         }
         lista.groupBy { it.fabricante }.forEach { (fabricante, itens) ->
@@ -123,9 +122,9 @@ class BuscaActivity : AppCompatActivity() {
     }
 
     private fun buscar() {
-        val apto = editApartamento.text.toString().trim()
-        if (apto.isBlank()) {
-            Toast.makeText(this, "Informe o apartamento", Toast.LENGTH_SHORT).show()
+        val query = editApartamento.text.toString().trim()
+        if (query.isBlank()) {
+            Toast.makeText(this, "Informe o apartamento ou nome", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -134,7 +133,7 @@ class BuscaActivity : AppCompatActivity() {
         containerHistorico.removeAllViews()
         containerEquip.removeAllViews()
 
-        val registros = historico.buscarPorApartamento(predio.id, apto)
+        val registros = historico.buscarPorApartamento(predio.id, query)
         if (registros.isEmpty()) {
             containerHistorico.addView(linhaTexto("Nada encontrado no histórico deste celular"))
         } else {
@@ -171,7 +170,12 @@ class BuscaActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 val resultado = withContext(Dispatchers.IO) {
                     try {
-                        ResultadoBusca(IsapiClient(predio, eq).buscarPorApartamento(apto), null)
+                        val lista = if (eq.fabricante == "Control iD") {
+                            IduhfClient(predio, eq).buscarPorApartamento(query)
+                        } else {
+                            IsapiClient(predio, eq).buscarPorApartamento(query)
+                        }
+                        ResultadoBusca(lista, null)
                     } catch (e: Exception) {
                         ResultadoBusca(null, e.message)
                     }
@@ -185,7 +189,7 @@ class BuscaActivity : AppCompatActivity() {
                         resultado.lista.forEach { (codigo, nome) ->
                             containerEquip.addView(
                                 linhaClicavel("  • $nome — código $codigo") {
-                                    mostrarAcoes(eq, codigo, nome, apto)
+                                    mostrarAcoes(eq, codigo, nome, query)
                                 }
                             )
                         }
@@ -226,7 +230,11 @@ class BuscaActivity : AppCompatActivity() {
                 lifecycleScope.launch {
                     val erro = withContext(Dispatchers.IO) {
                         try {
-                            IsapiClient(predio, equipamento).excluirUsuario(employeeNo)
+                            if (equipamento.fabricante == "Control iD") {
+                                IduhfClient(predio, equipamento).excluirUsuario(employeeNo)
+                            } else {
+                                IsapiClient(predio, equipamento).excluirUsuario(employeeNo)
+                            }
                             null
                         } catch (e: Exception) {
                             e.message ?: "Falha desconhecida"
