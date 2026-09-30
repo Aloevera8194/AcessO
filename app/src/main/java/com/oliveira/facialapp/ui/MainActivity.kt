@@ -7,6 +7,8 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.EditText
 import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -25,6 +27,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!com.oliveira.facialapp.data.SessaoStorage(this).logado()) {
+            com.oliveira.facialapp.net.voltarAoLogin(this)
+            return
+        }
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById<Toolbar>(R.id.toolbar))
 
@@ -75,15 +81,21 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (!::storage.isInitialized) return
         carregarLista()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
+        menu.add(0, ID_SAIR, 99, "Sair")
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == ID_SAIR) {
+            confirmarSaida()
+            return true
+        }
         if (item.itemId == R.id.action_modo_morador) {
             pedirSenhaEExecutar { mostrarDialogoModoMorador() }
             return true
@@ -111,6 +123,23 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancelar", null)
             .show()
+    }
+
+    private fun confirmarSaida() {
+        AlertDialog.Builder(this)
+            .setTitle("Sair da conta?")
+            .setPositiveButton("Sair") { _, _ ->
+                lifecycleScope.launch {
+                    com.oliveira.facialapp.net.ApiClient(this@MainActivity).logout()
+                    com.oliveira.facialapp.net.voltarAoLogin(this@MainActivity)
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    companion object {
+        private const val ID_SAIR = 9001
     }
 
     private fun carregarLista() {
