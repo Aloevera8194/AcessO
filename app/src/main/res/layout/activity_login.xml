@@ -60,6 +60,13 @@
             android:layout_marginTop="16dp"
             android:text="Entrar" />
 
+        <Button
+            android:id="@+id/btnLocal"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Usar sem servidor (modo local)" />
+
         <ProgressBar
             android:id="@+id/progress"
             android:layout_width="wrap_content"

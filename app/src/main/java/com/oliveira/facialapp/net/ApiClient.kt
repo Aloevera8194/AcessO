@@ -81,7 +81,7 @@ class ApiClient(context: Context) {
 
     suspend fun logout() = withContext(Dispatchers.IO) {
         try {
-            chamar("POST", "logout", ByteArray(0))
+            if (!sessao.token.isNullOrEmpty()) chamar("POST", "logout", ByteArray(0))
         } catch (e: Exception) {
             // ignora: sai do aparelho de qualquer jeito
         } finally {

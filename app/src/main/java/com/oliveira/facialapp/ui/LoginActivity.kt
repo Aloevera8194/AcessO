@@ -40,6 +40,11 @@ class LoginActivity : AppCompatActivity() {
 
         editServidor.setText(sessao.servidor)
 
+        findViewById<Button>(R.id.btnLocal).setOnClickListener {
+            sessao.modoLocal = true
+            abrirMain()
+        }
+
         btnEntrar.setOnClickListener {
             val login = editLogin.text.toString().trim()
             val senha = editSenha.text.toString()

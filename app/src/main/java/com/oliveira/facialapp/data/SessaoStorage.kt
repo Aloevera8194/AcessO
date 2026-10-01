@@ -19,7 +19,11 @@ class SessaoStorage(context: Context) {
 
     val token: String? get() = prefs.getString("token", null)
 
-    fun logado(): Boolean = !token.isNullOrEmpty()
+    var modoLocal: Boolean
+        get() = prefs.getBoolean("modoLocal", false)
+        set(v) { prefs.edit().putBoolean("modoLocal", v).apply() }
+
+    fun logado(): Boolean = !token.isNullOrEmpty() || modoLocal
 
     fun salvarLogin(token: String, usuario: JSONObject) {
         prefs.edit().putString("token", token).putString("usuario", usuario.toString()).apply()
@@ -34,7 +38,7 @@ class SessaoStorage(context: Context) {
     val nomeUsuario: String get() = usuario()?.optString("nome") ?: ""
 
     fun limpar() {
-        prefs.edit().remove("token").remove("usuario").apply()
+        prefs.edit().remove("token").remove("usuario").remove("modoLocal").apply()
     }
 
     companion object {
