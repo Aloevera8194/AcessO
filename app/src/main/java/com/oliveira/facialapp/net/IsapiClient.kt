@@ -116,10 +116,14 @@ class IsapiClient(private val predio: Predio, private val equipamento: Equipamen
     /** Aciona a abertura da porta remotamente (equivalente ao "acionamento" do Condfy).
      *  doorNo geralmente é 1 nesses terminais de porta única. */
     fun abrirPorta(doorNo: Int = 1) {
-        val json = """{"RemoteControlDoor":{"cmd":"open"}}"""
-        val body = json.toRequestBody("application/json".toMediaType())
-        val resposta = executarComDigest("/ISAPI/AccessControl/RemoteControl/door/$doorNo?format=json", "PUT", body)
-        validarResposta(resposta, "Abrir porta")
+        val xml = """<RemoteControlDoor version="2.0" xmlns="http://www.isapi.org/ver20/XMLSchema"><cmd>open</cmd></RemoteControlDoor>"""
+        val body = xml.toRequestBody("application/xml".toMediaType())
+        val resposta = executarComDigest("/ISAPI/AccessControl/RemoteControl/door/$doorNo", "PUT", body)
+        if (!resposta.contains("<statusCode>1</statusCode>")) {
+            val motivo = Regex("<statusString>(.*?)</statusString>").find(resposta)?.groupValues?.get(1)
+                ?: resposta.take(120)
+            throw IsapiException("Abrir porta: $motivo")
+        }
     }
 
     /** Consulta os usuários já cadastrados nesse equipamento e filtra pelos que começam
