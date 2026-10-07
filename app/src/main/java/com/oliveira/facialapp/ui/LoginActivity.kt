@@ -39,6 +39,12 @@ class LoginActivity : AppCompatActivity() {
         textErro = findViewById(R.id.textErro)
 
         editServidor.setText(sessao.servidor)
+        val editExterno = findViewById<EditText>(R.id.editExterno)
+        val editChave = findViewById<EditText>(R.id.editChave)
+        val partesSalvas = sessao.servidor.split(";").map { it.trim() }
+        editServidor.setText(partesSalvas[0])
+        editExterno.setText(partesSalvas.getOrNull(1).orEmpty())
+        editChave.setText(partesSalvas.getOrNull(2).orEmpty())
 
         findViewById<Button>(R.id.btnLocal).setOnClickListener {
             sessao.modoLocal = true
@@ -52,7 +58,10 @@ class LoginActivity : AppCompatActivity() {
                 mostrarErro("Informe login e senha.")
                 return@setOnClickListener
             }
-            sessao.servidor = editServidor.text.toString()
+            val localTxt = editServidor.text.toString().trim()
+            val externoTxt = editExterno.text.toString().trim()
+            val chaveTxt = editChave.text.toString().trim()
+            sessao.servidor = if (externoTxt.isEmpty()) localTxt else "$localTxt;$externoTxt;$chaveTxt"
             setCarregando(true)
             lifecycleScope.launch {
                 try {

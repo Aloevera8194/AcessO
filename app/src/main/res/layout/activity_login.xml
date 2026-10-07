@@ -28,8 +28,22 @@
             android:id="@+id/editServidor"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Endereço do servidor"
+            android:hint="IP local do servidor (em casa)"
             android:inputType="textUri" />
+
+        <EditText
+            android:id="@+id/editExterno"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="IP externo e porta (fora de casa)"
+            android:inputType="textUri" />
+
+        <EditText
+            android:id="@+id/editChave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Chave de acesso (fora de casa)"
+            android:inputType="textNoSuggestions" />
 
         <EditText
             android:id="@+id/editLogin"
