@@ -10,6 +10,10 @@ class SessaoStorage(context: Context) {
     var servidor: String
         get() = prefs.getString("servidor", PADRAO) ?: PADRAO
         set(v) {
+            if (v.contains(";")) {
+                prefs.edit().putString("servidor", v.trim()).apply()
+                return
+            }
             var s = v.trim().trimEnd('/')
             if (s.isNotEmpty() && !s.startsWith("http://") && !s.startsWith("https://")) {
                 s = "http://$s"

@@ -61,7 +61,7 @@ class LoginActivity : AppCompatActivity() {
                 } catch (e: ApiException) {
                     mostrarErro(e.message ?: "Erro ao entrar.")
                 } catch (e: IOException) {
-                    mostrarErro("Não consegui conectar em ${sessao.servidor}. Confira o endereço e se o celular está na mesma rede.")
+                    mostrarErro("Não consegui conectar no servidor. Confira os endereços, a chave e a internet do celular.")
                 } catch (e: Exception) {
                     mostrarErro("Erro: ${e.message}")
                 } finally {
