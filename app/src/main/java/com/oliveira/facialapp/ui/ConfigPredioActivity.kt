@@ -122,6 +122,7 @@ class ConfigPredioActivity : AppCompatActivity() {
             hint = "Nome/apelido (ex: Catraca entrada)"
             setPadding(0, 16, 0, 0)
         }
+        val editIp = EditText(this).apply { hint = "IP (deixe em branco pra usar o IP do prédio)" }
         val editPorta = EditText(this).apply { hint = "Porta"; setText("80") }
         val editUsuarioEq = EditText(this).apply { hint = "Usuário (deixe em branco pra usar o padrão do prédio)" }
         val editSenhaEq = EditText(this).apply {
@@ -143,11 +144,12 @@ class ConfigPredioActivity : AppCompatActivity() {
         existente?.let {
             editNomeEq.setText(it.nome)
             editPorta.setText(it.porta)
+            editIp.setText(it.ip)
             editUsuarioEq.setText(it.usuario)
             editSenhaEq.setText(it.senha)
         }
 
-        listOf(labelFabricante, spinnerFabricante, labelModelo, spinnerModelo, editNomeEq, editPorta, editUsuarioEq, editSenhaEq)
+        listOf(labelFabricante, spinnerFabricante, labelModelo, spinnerModelo, editNomeEq, editIp, editPorta, editUsuarioEq, editSenhaEq)
             .forEach { layout.addView(it) }
 
         val scroll = android.widget.ScrollView(this)
@@ -165,6 +167,7 @@ class ConfigPredioActivity : AppCompatActivity() {
                         Equipamento(
                             nome = editNomeEq.text.toString().trim(),
                             porta = porta,
+                            ip = editIp.text.toString().trim(),
                             usuario = editUsuarioEq.text.toString().trim(),
                             senha = editSenhaEq.text.toString(),
                             fabricante = fabricanteEscolhido,
@@ -174,6 +177,7 @@ class ConfigPredioActivity : AppCompatActivity() {
                 } else {
                     existente.nome = editNomeEq.text.toString().trim()
                     existente.porta = porta
+                    existente.ip = editIp.text.toString().trim()
                     existente.usuario = editUsuarioEq.text.toString().trim()
                     existente.senha = editSenhaEq.text.toString()
                     existente.fabricante = fabricanteEscolhido

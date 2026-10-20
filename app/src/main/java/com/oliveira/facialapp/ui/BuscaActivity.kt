@@ -170,7 +170,9 @@ class BuscaActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 val resultado = withContext(Dispatchers.IO) {
                     try {
-                        val lista = if (eq.fabricante == "Control iD") {
+                        val lista = if (eq.fabricante == "Sonoff") {
+                            throw Exception("Sonoff não tem cadastro de pessoas")
+                        } else if (eq.fabricante == "Control iD") {
                             IduhfClient(predio, eq).buscarPorApartamento(query)
                         } else {
                             IsapiClient(predio, eq).buscarPorApartamento(query)

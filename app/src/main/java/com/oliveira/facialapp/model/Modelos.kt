@@ -9,13 +9,15 @@ data class Equipamento(
     var usuario: String = "",
     var senha: String = "",
     var fabricante: String = "Hikvision",
-    var modelo: String = ""
+    var modelo: String = "",
+    var ip: String = ""
 )
 
 object EquipamentoCatalogo {
     val modelosPorFabricante: LinkedHashMap<String, List<String>> = linkedMapOf(
         "Hikvision" to listOf("Catraca / Facial (ISAPI)"),
-        "Control iD" to listOf("iDUHF (leitor UHF)")
+        "Control iD" to listOf("iDUHF (leitor UHF)"),
+        "Sonoff" to listOf("Mini (Tasmota - acionamento)")
     )
     val fabricantes: List<String> = modelosPorFabricante.keys.toList()
 }
@@ -68,3 +70,7 @@ data class RegistroCadastro(
     var nome: String = "",
     var dataHora: String = ""
 )
+
+fun Equipamento.ehSonoff(): Boolean = fabricante == "Sonoff"
+
+fun Equipamento.ipEfetivo(predio: Predio): String = ip.ifBlank { predio.ip }

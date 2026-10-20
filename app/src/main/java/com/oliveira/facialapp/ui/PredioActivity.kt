@@ -17,6 +17,7 @@ import com.oliveira.facialapp.data.ConfigStorage
 import com.oliveira.facialapp.model.Equipamento
 import com.oliveira.facialapp.model.Predio
 import com.oliveira.facialapp.net.IsapiClient
+import com.oliveira.facialapp.net.SonoffClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -83,7 +84,7 @@ class PredioActivity : AppCompatActivity() {
                 lifecycleScope.launch {
                     val erro = withContext(Dispatchers.IO) {
                         try {
-                            IsapiClient(predio, eq).abrirPorta()
+                            if (eq.fabricante == "Sonoff") SonoffClient(predio, eq).acionar() else IsapiClient(predio, eq).abrirPorta()
                             null
                         } catch (e: Exception) {
                             e.message ?: "Falha desconhecida"

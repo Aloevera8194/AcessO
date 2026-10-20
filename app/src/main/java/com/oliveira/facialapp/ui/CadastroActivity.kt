@@ -394,6 +394,7 @@ class CadastroActivity : AppCompatActivity() {
     private fun enviarParaUmEquipamento(eq: Equipamento, usuario: UsuarioCadastro): ResultadoEnvio {
         return try {
             when (eq.fabricante) {
+                "Sonoff" -> throw Exception("Sonoff só aciona portão, não cadastra pessoas")
                 "Control iD" -> {
                     val cliente = IduhfClient(predio, eq)
                     if (modoEdicao) cliente.atualizarUsuario(usuario) else cliente.criarUsuario(usuario)
