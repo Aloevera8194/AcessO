@@ -290,7 +290,10 @@ class CadastroActivity : AppCompatActivity() {
     private fun montarChecklistEquipamentos() {
         containerEquipamentos.removeAllViews()
         val checkboxes = mutableListOf<CheckBox>()
-        predio.equipamentos.groupBy { it.fabricante }.forEach { (fabricante, lista) ->
+        predio.equipamentos
+            .filter { it.fabricante != "Sonoff" }
+            .groupBy { it.fabricante }
+            .forEach { (fabricante, lista) ->
             val titulo = TextView(this)
             titulo.text = fabricante
             titulo.setTypeface(null, android.graphics.Typeface.BOLD)
