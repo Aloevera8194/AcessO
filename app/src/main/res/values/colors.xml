@@ -1,9 +1,9 @@
 <resources>
-    <color name="primary">#1E4E8C</color>
-    <color name="primary_dark">#12315A</color>
-    <color name="accent">#F2994A</color>
-    <color name="background">#F5F7FA</color>
-    <color name="text_dark">#1B2733</color>
-    <color name="sucesso">#27AE60</color>
-    <color name="falha">#EB5757</color>
+    <color name="primary">#59643A</color>
+    <color name="primary_dark">#343D24</color>
+    <color name="accent">#89965A</color>
+    <color name="background">#F5F6F1</color>
+    <color name="text_dark">#25291F</color>
+    <color name="sucesso">#54804B</color>
+    <color name="falha">#C94F49</color>
 </resources>

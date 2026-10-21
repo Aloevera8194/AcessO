@@ -14,15 +14,18 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Cadastro Facial"
-            android:textSize="26sp"
+            android:text="AcessO"
+            android:textColor="@color/primary_dark"
+            android:textSize="30sp"
             android:textStyle="bold" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            android:text="Entre com a sua conta" />
+            android:text="Entre com a sua conta"
+            android:textColor="@color/text_dark"
+            android:textSize="16sp" />
 
         <EditText
             android:id="@+id/editServidor"
@@ -64,7 +67,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:textColor="#B00020"
+            android:textColor="@color/falha"
             android:visibility="gone" />
 
         <Button
@@ -72,14 +75,20 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Entrar" />
+            android:text="Entrar"
+            android:textAllCaps="false"
+            android:minHeight="52dp"
+            android:backgroundTint="@color/primary" />
 
         <Button
             android:id="@+id/btnLocal"
             style="?android:attr/buttonBarButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Usar sem servidor (modo local)" />
+            android:text="Usar sem servidor (modo local)"
+            android:textAllCaps="false"
+            android:textColor="@color/primary"
+            android:minHeight="48dp" />
 
         <ProgressBar
             android:id="@+id/progress"

@@ -27,14 +27,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="18dp">
 
             <ImageView
                 android:id="@+id/imgFoto"
                 android:layout_width="120dp"
                 android:layout_height="120dp"
                 android:layout_gravity="center_horizontal"
-                android:background="#E0E0E0"
+                android:background="@color/background"
                 android:scaleType="centerCrop"
                 android:contentDescription="Foto do rosto" />
 
