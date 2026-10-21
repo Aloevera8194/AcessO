@@ -2,13 +2,22 @@
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
 
-    <!-- Rosto (círculo + corpo simplificado) -->
-    <path android:fillColor="#FFFFFF" android:pathData="M54,34 m-14,0 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0" />
-    <path android:fillColor="#FFFFFF" android:pathData="M32,78 c0,-14 10,-22 22,-22 c12,0 22,8 22,22 z" />
+    <!-- Cantos de mira (scanner) -->
+    <path android:strokeColor="#F2994A" android:strokeWidth="3.5" android:strokeLineCap="round" android:pathData="M28,38 V32 a4,4 0 0 1 4,-4 H38" />
+    <path android:strokeColor="#F2994A" android:strokeWidth="3.5" android:strokeLineCap="round" android:pathData="M80,38 V32 a4,4 0 0 0 -4,-4 H70" />
+    <path android:strokeColor="#F2994A" android:strokeWidth="3.5" android:strokeLineCap="round" android:pathData="M28,70 V76 a4,4 0 0 0 4,4 H38" />
+    <path android:strokeColor="#F2994A" android:strokeWidth="3.5" android:strokeLineCap="round" android:pathData="M80,70 V76 a4,4 0 0 1 -4,4 H70" />
 
-    <!-- Cantos de mira (estilo scanner) -->
-    <path android:strokeColor="#F2994A" android:strokeWidth="4" android:pathData="M20,26 v-6 a4,4 0 0 1 4,-4 h6" />
-    <path android:strokeColor="#F2994A" android:strokeWidth="4" android:pathData="M88,26 v-6 a4,4 0 0 0 -4,-4 h-6" />
-    <path android:strokeColor="#F2994A" android:strokeWidth="4" android:pathData="M20,82 v6 a4,4 0 0 0 4,4 h6" />
-    <path android:strokeColor="#F2994A" android:strokeWidth="4" android:pathData="M88,82 v6 a4,4 0 0 1 -4,4 h-6" />
+    <!-- Contorno do rosto -->
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="3" android:fillColor="#00000000" android:pathData="M43,52 a11,14 0 1,0 22,0 a11,14 0 1,0 -22,0" />
+
+    <!-- Olhos -->
+    <path android:fillColor="#FFFFFF" android:pathData="M47.7,50 a1.8,1.8 0 1,0 3.6,0 a1.8,1.8 0 1,0 -3.6,0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M56.7,50 a1.8,1.8 0 1,0 3.6,0 a1.8,1.8 0 1,0 -3.6,0" />
+
+    <!-- Sorriso -->
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="2.2" android:strokeLineCap="round" android:pathData="M49.5,59 q4.5,3.5 9,0" />
+
+    <!-- Linha de varredura -->
+    <path android:strokeColor="#F2994A" android:strokeWidth="2" android:strokeLineCap="round" android:pathData="M34,54.5 H74" />
 </vector>
