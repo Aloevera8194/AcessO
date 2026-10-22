@@ -202,15 +202,49 @@ class BuscaActivity : AppCompatActivity() {
     }
 
     private fun mostrarAcoes(equipamento: Equipamento, employeeNo: String, nome: String, apartamento: String) {
+        val opcoes = if (equipamento.fabricante == "Control iD") {
+            arrayOf("Ver detalhes / TAG", "Editar", "Excluir", "Cancelar")
+        } else {
+            arrayOf("Editar", "Excluir", "Cancelar")
+        }
+
         AlertDialog.Builder(this)
             .setTitle(nome)
-            .setItems(arrayOf("Editar", "Excluir", "Cancelar")) { _, which ->
-                when (which) {
-                    0 -> abrirEdicao(equipamento, employeeNo, nome, apartamento)
-                    1 -> confirmarExclusao(equipamento, employeeNo, nome)
+            .setItems(opcoes) { _, which ->
+                if (equipamento.fabricante == "Control iD") {
+                    when (which) {
+                        0 -> mostrarDetalhes(equipamento, employeeNo)
+                        1 -> abrirEdicao(equipamento, employeeNo, nome, apartamento)
+                        2 -> confirmarExclusao(equipamento, employeeNo, nome)
+                    }
+                } else {
+                    when (which) {
+                        0 -> abrirEdicao(equipamento, employeeNo, nome, apartamento)
+                        1 -> confirmarExclusao(equipamento, employeeNo, nome)
+                    }
                 }
             }
             .show()
+    }
+
+    private fun mostrarDetalhes(equipamento: Equipamento, employeeNo: String) {
+        lifecycleScope.launch {
+            val resultado = withContext(Dispatchers.IO) {
+                try {
+                    IduhfClient(predio, equipamento).detalhesUsuario(employeeNo) to null
+                } catch (e: Exception) {
+                    null to (e.message ?: "Falha ao consultar o equipamento")
+                }
+            }
+
+            val texto = resultado.first
+            val erro = resultado.second
+            AlertDialog.Builder(this@BuscaActivity)
+                .setTitle("Detalhes do usuário")
+                .setMessage(texto ?: "Não foi possível consultar: $erro")
+                .setPositiveButton("OK", null)
+                .show()
+        }
     }
 
     private fun abrirEdicao(equipamento: Equipamento, employeeNo: String, nome: String, apartamento: String) {

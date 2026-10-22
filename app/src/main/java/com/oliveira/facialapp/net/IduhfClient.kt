@@ -214,6 +214,61 @@ class IduhfClient(private val predio: Predio, private val equipamento: Equipamen
         return encontrados
     }
 
+    fun detalhesUsuario(employeeNo: String): String {
+        val session = login()
+
+        val consultaUsuarios = JSONObject()
+            .put("object", "users")
+            .put("fields", JSONArray().put("id").put("registration").put("name"))
+            .put("where", JSONObject().put(
+                "users", JSONObject().put("registration", employeeNo)
+            ))
+
+        val usuarios = post("/load_objects.fcgi", consultaUsuarios, session)
+            .optJSONArray("users") ?: JSONArray()
+
+        if (usuarios.length() == 0) return "Usuário não encontrado no equipamento."
+
+        val usuarioEncontrado = usuarios.getJSONObject(0)
+        val userId = usuarioEncontrado.optLong("id")
+        val nome = usuarioEncontrado.optString("name", "")
+        val registro = usuarioEncontrado.optString("registration", "")
+
+        val consultaCartoes = JSONObject()
+            .put("object", "cards")
+            .put("fields", JSONArray().put("id").put("value").put("user_id"))
+            .put("where", JSONObject().put(
+                "cards", JSONObject().put("user_id", userId)
+            ))
+
+        val cartoes = post("/load_objects.fcgi", consultaCartoes, session)
+            .optJSONArray("cards") ?: JSONArray()
+
+        val resultado = StringBuilder()
+        resultado.append("Nome: ").append(nome)
+        resultado.append("\\nApartamento/matrícula: ").append(registro)
+        resultado.append("\\nID interno: ").append(userId)
+        resultado.append("\\n\\nTAGs/cartões associados: ")
+
+        if (cartoes.length() == 0) {
+            resultado.append("nenhum")
+        } else {
+            resultado.append("\\n")
+            for (i in 0 until cartoes.length()) {
+                val cartao = cartoes.getJSONObject(i)
+                val valor = cartao.optLong("value")
+                val area = valor / 4294967296L
+                val codigo = valor % 4294967296L
+                resultado.append("Área: ").append(area)
+                    .append("  Código: ").append(codigo)
+                    .append("\\nValor API: ").append(valor)
+                    .append("\\nID do cartão: ").append(cartao.optLong("id"))
+                if (i < cartoes.length() - 1) resultado.append("\\n\\n")
+            }
+        }
+        return resultado.toString()
+    }
+
     fun excluirUsuario(employeeNo: String) {
         val session = login()
         val corpo = JSONObject()
