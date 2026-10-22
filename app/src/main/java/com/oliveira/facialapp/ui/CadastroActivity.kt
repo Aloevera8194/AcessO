@@ -335,7 +335,7 @@ class CadastroActivity : AppCompatActivity() {
         editsTagsUhf.clear()
         for (i in 1..5) {
             val edit = EditText(this)
-            edit.hint = "TAG UHF $i"
+            edit.hint = "TAG UHF $i (área,código)"
             containerTagsUhf.addView(edit)
             editsTagsUhf.add(edit)
         }
@@ -358,8 +358,14 @@ class CadastroActivity : AppCompatActivity() {
             nome = editNome.text.toString().trim(),
             cartoes = if (usaUhf) MutableList(5) { "" }
                       else MutableList(5) { i -> if (i == 0) editCartao.text.toString().trim() else "" },
-            tagsUhf = if (usaUhf) MutableList(5) { i -> TagUhf(id = editsTagsUhf.getOrNull(i)?.text?.toString()?.trim() ?: "") }
-                      else MutableList(5) { TagUhf() },
+            tagsUhf = if (usaUhf) MutableList(5) { i ->
+                val texto = editsTagsUhf.getOrNull(i)?.text?.toString()?.trim().orEmpty()
+                val partes = texto.split(",", limit = 2)
+                TagUhf(
+                    area = partes.getOrNull(0)?.trim().orEmpty(),
+                    id = partes.getOrNull(1)?.trim().orEmpty()
+                )
+            } else MutableList(5) { TagUhf() },
             validadeInicio = dataInicio,
             validadeFim = dataFim,
             fotoCaminho = caminhoFotoPreparada

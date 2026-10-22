@@ -107,19 +107,61 @@ class IduhfClient(private val predio: Predio, private val equipamento: Equipamen
     }
 
     private fun substituirTagsUhf(session: String, userId: Long, u: UsuarioCadastro) {
+        // No modo Standard, TAG UHF é armazenada como cartão (cards).
+        val valores = u.tagsUhf.mapNotNull { tag ->
+            val areaTexto = tag.area.trim()
+            val codigoTexto = tag.id.trim()
+
+            if (areaTexto.isBlank() && codigoTexto.isBlank()) return@mapNotNull null
+            if (areaTexto.isBlank() || codigoTexto.isBlank()) {
+                throw IduhfException("TAG inválida: use o formato área,código. Ex.: 001,16345")
+            }
+
+            val area = areaTexto.toLongOrNull()
+                ?: throw IduhfException("Área inválida na TAG: $areaTexto")
+            val codigo = codigoTexto.toLongOrNull()
+                ?: throw IduhfException("Código inválido na TAG: $codigoTexto")
+
+            if (area < 0 || area > 2147483647L ||
+                codigo < 0 || codigo > 4294967295L) {
+                throw IduhfException("Área ou código fora do limite permitido.")
+            }
+
+            area * 4294967296L + codigo
+        }.distinct()
+
+        // Verifica conflitos antes de remover cartões já associados ao usuário.
+        if (valores.isNotEmpty()) {
+            val consulta = JSONObject()
+                .put("object", "cards")
+                .put("fields", JSONArray().put("value").put("user_id"))
+            val resposta = post("/load_objects.fcgi", consulta, session)
+            val cards = resposta.optJSONArray("cards") ?: JSONArray()
+
+            for (i in 0 until cards.length()) {
+                val card = cards.getJSONObject(i)
+                val valor = card.optLong("value")
+                if (valor in valores && card.optLong("user_id") != userId) {
+                    throw IduhfException("Esta TAG já está associada a outro usuário.")
+                }
+            }
+        }
+
         val destruir = JSONObject()
-            .put("object", "uhf_tags")
-            .put("where", JSONObject().put("uhf_tags", JSONObject().put("user_id", userId)))
+            .put("object", "cards")
+            .put("where", JSONObject().put("cards", JSONObject().put("user_id", userId)))
         post("/destroy_objects.fcgi", destruir, session)
 
-        val tags = u.tagsUhf.map { it.id.trim() }.filter { it.isNotBlank() }
-        if (tags.isEmpty()) return
+        if (valores.isEmpty()) return
 
-        val valores = JSONArray()
-        tags.forEach { tag ->
-            valores.put(JSONObject().put("value", tag).put("user_id", userId))
+        val lista = JSONArray()
+        valores.forEach { valor ->
+            lista.put(JSONObject().put("value", valor).put("user_id", userId))
         }
-        val corpo = JSONObject().put("object", "uhf_tags").put("values", valores)
+
+        val corpo = JSONObject()
+            .put("object", "cards")
+            .put("values", lista)
         post("/create_objects.fcgi", corpo, session)
     }
 
