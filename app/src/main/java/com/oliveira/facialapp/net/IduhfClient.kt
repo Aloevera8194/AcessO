@@ -45,6 +45,19 @@ class IduhfClient(private val predio: Predio, private val equipamento: Equipamen
         return json
     }
 
+    fun abrirPorta() {
+        val session = login()
+        val corpo = JSONObject().put(
+            "actions",
+            JSONArray().put(
+                JSONObject()
+                    .put("action", "door")
+                    .put("parameters", "door=1")
+            )
+        )
+        post("/execute_actions.fcgi", corpo, session)
+    }
+
     private fun login(): String {
         val corpo = JSONObject()
             .put("login", usuario.ifBlank { "admin" })

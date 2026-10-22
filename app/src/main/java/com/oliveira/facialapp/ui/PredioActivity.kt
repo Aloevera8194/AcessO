@@ -84,7 +84,11 @@ class PredioActivity : AppCompatActivity() {
                 lifecycleScope.launch {
                     val erro = withContext(Dispatchers.IO) {
                         try {
-                            if (eq.fabricante == "Sonoff") SonoffClient(predio, eq).acionar() else IsapiClient(predio, eq).abrirPorta()
+                            when (eq.fabricante) {
+                                "Sonoff" -> SonoffClient(predio, eq).acionar()
+                                "Control iD" -> com.oliveira.facialapp.net.IduhfClient(predio, eq).abrirPorta()
+                                else -> IsapiClient(predio, eq).abrirPorta()
+                            }
                             null
                         } catch (e: Exception) {
                             e.message ?: "Falha desconhecida"
