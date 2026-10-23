@@ -171,6 +171,7 @@ class CadastroActivity : AppCompatActivity() {
         }
 
         montarChecklistEquipamentos()
+        findViewById<View>(R.id.btnCapturarEquip).setOnClickListener { capturarFotoNoEquipamento() }
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
         findViewById<View>(R.id.btnLerNfc).setOnClickListener {
@@ -279,6 +280,32 @@ class CadastroActivity : AppCompatActivity() {
                 btnValidadeFim.text = "Fim: $exibicao"
             }
         }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
+    }
+
+    private fun capturarFotoNoEquipamento() {
+        val eq = equipamentosSelecionados().firstOrNull { it.fabricante == "Hikvision" }
+        if (eq == null) {
+            Toast.makeText(this, "Marque um equipamento Hikvision em 'Enviar para'", Toast.LENGTH_LONG).show()
+            return
+        }
+        val btn = findViewById<View>(R.id.btnCapturarEquip)
+        btn.isEnabled = false
+        Toast.makeText(this, "Peça para a pessoa olhar para o equipamento...", Toast.LENGTH_LONG).show()
+        lifecycleScope.launch {
+            try {
+                val arquivo = withContext(Dispatchers.IO) { IsapiClient(predio, eq).capturarFace(cacheDir) }
+                processarFoto(Uri.fromFile(arquivo))
+                Toast.makeText(this@CadastroActivity, "Foto capturada", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                AlertDialog.Builder(this@CadastroActivity)
+                    .setTitle("Falha na captura")
+                    .setMessage(e.message ?: "Erro desconhecido")
+                    .setPositiveButton("OK", null)
+                    .show()
+            } finally {
+                btn.isEnabled = true
+            }
+        }
     }
 
     private fun processarFoto(uri: Uri) {

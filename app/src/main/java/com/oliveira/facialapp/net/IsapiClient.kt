@@ -250,4 +250,68 @@ class IsapiClient(private val predio: Predio, private val equipamento: Equipamen
         executarComDigest("/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json", "POST", multipart)
             .let { validarResposta(it, "Enviar foto") }
     }
+
+    /** Manda o terminal capturar o rosto de quem está na frente dele e salva o JPEG. */
+    fun capturarFace(pasta: File): File {
+        val xml = """<CaptureFaceDataCond version="2.0" xmlns="http://www.isapi.org/ver20/XMLSchema"><captureInfrared>false</captureInfrared><dataType>binary</dataType></CaptureFaceDataCond>"""
+        val bytes = executarDigestBytes("/ISAPI/AccessControl/CaptureFaceData", "POST",
+            xml.toRequestBody("application/xml".toMediaType()))
+
+        var ini = -1
+        for (i in 0 until bytes.size - 3) {
+            if (bytes[i] == 0xFF.toByte() && bytes[i + 1] == 0xD8.toByte() && bytes[i + 2] == 0xFF.toByte()) { ini = i; break }
+        }
+        var fim = -1
+        for (i in bytes.size - 2 downTo 0) {
+            if (bytes[i] == 0xFF.toByte() && bytes[i + 1] == 0xD9.toByte()) { fim = i + 2; break }
+        }
+        if (ini < 0 || fim <= ini) {
+            val resumo = bytes.copyOf(minOf(bytes.size, 300)).toString(Charsets.UTF_8)
+            throw IsapiException("Captura sem imagem: $resumo")
+        }
+        val arquivo = File(pasta, "captura_${System.currentTimeMillis()}.jpg")
+        arquivo.writeBytes(bytes.copyOfRange(ini, fim))
+        return arquivo
+    }
+
+    /** Igual ao executarComDigest, mas devolve bytes e espera até 40s (a pessoa precisa se posicionar). */
+    private fun executarDigestBytes(path: String, method: String, body: okhttp3.RequestBody?): ByteArray {
+        val longo = client.newBuilder().readTimeout(40, TimeUnit.SECONDS).build()
+        val url = "$baseUrl$path"
+
+        val r1 = longo.newCall(Request.Builder().url(url).method(method, body).build()).execute()
+        if (r1.code != 401) {
+            val b = r1.body?.bytes() ?: ByteArray(0)
+            r1.close()
+            if (!r1.isSuccessful) throw IsapiException("HTTP ${r1.code}: ${String(b)}")
+            return b
+        }
+        val desafio = r1.header("WWW-Authenticate")
+        r1.close()
+        if (desafio == null || !desafio.startsWith("Digest", ignoreCase = true)) {
+            throw IsapiException("Equipamento não pediu autenticação Digest (verifique usuário/senha)")
+        }
+        val campos = Regex("(\\w+)=\"?([^\",]+)\"?").findAll(desafio)
+            .associate { it.groupValues[1] to it.groupValues[2].trim('"') }
+        val realm = campos["realm"] ?: ""
+        val nonce = campos["nonce"] ?: ""
+        val qop = campos["qop"]
+        val opaque = campos["opaque"]
+        val ha1 = md5("$usuario:$realm:$senha")
+        val ha2 = md5("$method:$path")
+        val cnonce = Random.nextBytes(8).joinToString("") { "%02x".format(it) }
+        val nc = "00000001"
+        val resp = if (qop != null) md5("$ha1:$nonce:$nc:$cnonce:$qop:$ha2") else md5("$ha1:$nonce:$ha2")
+        val auth = buildString {
+            append("Digest username=\"$usuario\", realm=\"$realm\", nonce=\"$nonce\", uri=\"$path\"")
+            if (qop != null) append(", qop=$qop, nc=$nc, cnonce=\"$cnonce\"")
+            append(", response=\"$resp\"")
+            if (opaque != null) append(", opaque=\"$opaque\"")
+        }
+        val r2 = longo.newCall(Request.Builder().url(url).method(method, body).header("Authorization", auth).build()).execute()
+        val b2 = r2.body?.bytes() ?: ByteArray(0)
+        r2.close()
+        if (!r2.isSuccessful) throw IsapiException("HTTP ${r2.code}: ${String(b2)}")
+        return b2
+    }
 }
