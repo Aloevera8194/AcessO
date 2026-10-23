@@ -2,6 +2,7 @@ package com.oliveira.facialapp.net
 
 import com.oliveira.facialapp.model.Equipamento
 import com.oliveira.facialapp.model.Predio
+import com.oliveira.facialapp.model.ipEfetivo
 import com.oliveira.facialapp.model.UsuarioCadastro
 import com.oliveira.facialapp.model.senhaEfetiva
 import com.oliveira.facialapp.model.usuarioEfetivo
@@ -29,7 +30,7 @@ class IsapiClient(private val predio: Predio, private val equipamento: Equipamen
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
 
-    private val baseUrl = "http://${predio.ip}:${equipamento.porta}"
+    private val baseUrl = "http://${equipamento.ipEfetivo(predio)}:${equipamento.porta}"
     private val usuario = equipamento.usuarioEfetivo(predio)
     private val senha = equipamento.senhaEfetiva(predio)
 
