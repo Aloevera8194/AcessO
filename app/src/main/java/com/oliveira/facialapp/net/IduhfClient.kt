@@ -84,8 +84,6 @@ class IduhfClient(private val predio: Predio, private val equipamento: Equipamen
         val valores = JSONObject()
             .put("registration", u.employeeNo)
             .put("name", u.nome)
-            .put("begin_time", timestamp(u.validadeInicio))
-            .put("end_time", timestamp(u.validadeFim))
         val corpo = JSONObject()
             .put("object", "users")
             .put("values", JSONArray().put(valores))
@@ -98,8 +96,6 @@ class IduhfClient(private val predio: Predio, private val equipamento: Equipamen
     private fun atualizarDadosUsuario(session: String, userId: Long, u: UsuarioCadastro) {
         val valores = JSONObject()
             .put("name", u.nome)
-            .put("begin_time", timestamp(u.validadeInicio))
-            .put("end_time", timestamp(u.validadeFim))
         val corpo = JSONObject()
             .put("object", "users")
             .put("values", valores)
@@ -166,6 +162,31 @@ class IduhfClient(private val predio: Predio, private val equipamento: Equipamen
         post("/create_objects.fcgi", corpo, session)
     }
 
+    private fun vincularDepartamentoPadrao(session: String, userId: Long) {
+        val consultaGrupo = JSONObject()
+            .put("object", "groups")
+            .put("fields", JSONArray().put("id").put("name"))
+        val grupos = post("/load_objects.fcgi", consultaGrupo, session).optJSONArray("groups") ?: JSONArray()
+        var grupoId: Long? = null
+        for (i in 0 until grupos.length()) {
+            val g = grupos.getJSONObject(i)
+            if (g.optString("name").trim().equals("Padrão", ignoreCase = true)) grupoId = g.optLong("id")
+        }
+        if (grupoId == null) throw IduhfException("Departamento 'Padrão' não encontrado no equipamento")
+
+        val consultaVinculo = JSONObject()
+            .put("object", "user_groups")
+            .put("fields", JSONArray().put("user_id").put("group_id"))
+            .put("where", JSONObject().put("user_groups", JSONObject().put("user_id", userId).put("group_id", grupoId)))
+        val existentes = post("/load_objects.fcgi", consultaVinculo, session).optJSONArray("user_groups") ?: JSONArray()
+        if (existentes.length() > 0) return
+
+        val corpo = JSONObject()
+            .put("object", "user_groups")
+            .put("values", JSONArray().put(JSONObject().put("user_id", userId).put("group_id", grupoId)))
+        post("/create_objects.fcgi", corpo, session)
+    }
+
     private fun timestamp(dataIsapi: String): Long {
         return try {
             (formatoIsapi.parse(dataIsapi)?.time ?: 0L) / 1000
@@ -180,6 +201,7 @@ class IduhfClient(private val predio: Predio, private val equipamento: Equipamen
         val userId = existenteId ?: criarUsuarioObjeto(session, u)
         if (existenteId != null) atualizarDadosUsuario(session, userId, u)
         substituirTagsUhf(session, userId, u)
+        vincularDepartamentoPadrao(session, userId)
     }
 
     fun atualizarUsuario(u: UsuarioCadastro) {
@@ -187,6 +209,7 @@ class IduhfClient(private val predio: Predio, private val equipamento: Equipamen
         val userId = buscarIdPorMatricula(session, u.employeeNo) ?: criarUsuarioObjeto(session, u)
         atualizarDadosUsuario(session, userId, u)
         substituirTagsUhf(session, userId, u)
+        vincularDepartamentoPadrao(session, userId)
     }
 
     /** Busca usuários cujo registration comece com o apartamento OU cujo nome contenha o texto. */
