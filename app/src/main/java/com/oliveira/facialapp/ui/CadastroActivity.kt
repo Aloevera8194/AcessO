@@ -76,6 +76,7 @@ class CadastroActivity : AppCompatActivity() {
     private val editsTagsUhf = mutableListOf<EditText>()
 
     private var caminhoFotoPreparada: String = ""
+    private var digitalCapturada: String = ""
     private var dataInicio = ""
     private var dataFim = ""
     private var uriCameraTemp: Uri? = null
@@ -172,6 +173,8 @@ class CadastroActivity : AppCompatActivity() {
 
         montarChecklistEquipamentos()
         findViewById<View>(R.id.btnCapturarEquip).setOnClickListener { capturarFotoNoEquipamento() }
+        findViewById<View>(R.id.btnCapturarDigital).setOnClickListener { capturarDigitalNoEquipamento() }
+        findViewById<View>(R.id.btnCapturarTag).setOnClickListener { capturarTagNoEquipamento() }
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
         findViewById<View>(R.id.btnLerNfc).setOnClickListener {
@@ -308,6 +311,58 @@ class CadastroActivity : AppCompatActivity() {
         }
     }
 
+    private fun capturarDigitalNoEquipamento() {
+        val eq = equipamentosSelecionados().firstOrNull { it.fabricante == "Hikvision" }
+        if (eq == null) {
+            Toast.makeText(this, "Marque um equipamento Hikvision em 'Enviar para'", Toast.LENGTH_LONG).show()
+            return
+        }
+        val btn = findViewById<View>(R.id.btnCapturarDigital)
+        btn.isEnabled = false
+        Toast.makeText(this, "Peça para a pessoa colocar o dedo no leitor...", Toast.LENGTH_LONG).show()
+        lifecycleScope.launch {
+            try {
+                val dados = withContext(Dispatchers.IO) { IsapiClient(predio, eq).capturarDigital() }
+                digitalCapturada = dados
+                Toast.makeText(this@CadastroActivity, "Digital capturada", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                AlertDialog.Builder(this@CadastroActivity)
+                    .setTitle("Falha na captura da digital")
+                    .setMessage(e.message ?: "Erro desconhecido")
+                    .setPositiveButton("OK", null)
+                    .show()
+            } finally {
+                btn.isEnabled = true
+            }
+        }
+    }
+
+    private fun capturarTagNoEquipamento() {
+        val eq = equipamentosSelecionados().firstOrNull { it.fabricante == "Hikvision" }
+        if (eq == null) {
+            Toast.makeText(this, "Marque um equipamento Hikvision em 'Enviar para'", Toast.LENGTH_LONG).show()
+            return
+        }
+        val btn = findViewById<View>(R.id.btnCapturarTag)
+        btn.isEnabled = false
+        Toast.makeText(this, "Peça para a pessoa aproximar a TAG do leitor...", Toast.LENGTH_LONG).show()
+        lifecycleScope.launch {
+            try {
+                val numero = withContext(Dispatchers.IO) { IsapiClient(predio, eq).capturarCartao() }
+                editCartao.setText(numero)
+                Toast.makeText(this@CadastroActivity, "TAG lida: $numero", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                AlertDialog.Builder(this@CadastroActivity)
+                    .setTitle("Falha na leitura da TAG")
+                    .setMessage(e.message ?: "Erro desconhecido")
+                    .setPositiveButton("OK", null)
+                    .show()
+            } finally {
+                btn.isEnabled = true
+            }
+        }
+    }
+
     private fun processarFoto(uri: Uri) {
         val arquivo = FotoUtils.prepararFoto(this, uri)
         caminhoFotoPreparada = arquivo.absolutePath
@@ -395,7 +450,8 @@ class CadastroActivity : AppCompatActivity() {
             } else MutableList(5) { TagUhf() },
             validadeInicio = dataInicio,
             validadeFim = dataFim,
-            fotoCaminho = caminhoFotoPreparada
+            fotoCaminho = caminhoFotoPreparada,
+            digitalBase64 = digitalCapturada
         )
     }
 
@@ -440,6 +496,7 @@ class CadastroActivity : AppCompatActivity() {
                     if (modoEdicao) cliente.atualizarUsuario(usuario) else cliente.criarUsuario(usuario)
                     cliente.cadastrarCartao(usuario)
                     cliente.enviarFoto(usuario)
+                    if (usuario.digitalBase64.isNotBlank()) cliente.cadastrarDigital(usuario)
                 }
             }
             ResultadoEnvio(eq, ResultadoStatus.SUCESSO, if (modoEdicao) "Atualizado com sucesso" else "Cadastrado com sucesso")

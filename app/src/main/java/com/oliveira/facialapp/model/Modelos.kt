@@ -50,7 +50,8 @@ data class UsuarioCadastro(
     var tagsUhf: MutableList<TagUhf> = MutableList(5) { TagUhf() },
     var validadeInicio: String = "",
     var validadeFim: String = "",
-    var fotoCaminho: String = ""
+    var fotoCaminho: String = "",
+    var digitalBase64: String = ""
 )
 
 enum class ResultadoStatus { SUCESSO, FALHA }

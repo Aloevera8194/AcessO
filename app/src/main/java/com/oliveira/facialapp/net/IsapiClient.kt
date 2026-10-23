@@ -314,4 +314,37 @@ class IsapiClient(private val predio: Predio, private val equipamento: Equipamen
         if (!r2.isSuccessful) throw IsapiException("HTTP ${r2.code}: ${String(b2)}")
         return b2
     }
+
+    /** Manda o terminal ler a digital de quem está nele e devolve o template em base64. */
+    fun capturarDigital(): String {
+        val xml = """<CaptureFingerPrintCond version="2.0" xmlns="http://www.isapi.org/ver20/XMLSchema"><fingerNo>1</fingerNo></CaptureFingerPrintCond>"""
+        val bytes = executarDigestBytes("/ISAPI/AccessControl/CaptureFingerPrint", "POST",
+            xml.toRequestBody("application/xml".toMediaType()))
+        val texto = String(bytes)
+        val dados = Regex("<fingerData>(.*?)</fingerData>", RegexOption.DOT_MATCHES_ALL)
+            .find(texto)?.groupValues?.get(1)?.trim().orEmpty()
+        if (dados.isBlank()) throw IsapiException("Captura de digital sem dados: ${texto.take(300)}")
+        return dados
+    }
+
+    /** Fica esperando o cartão/TAG ser aproximado do leitor e devolve o número. */
+    fun capturarCartao(): String {
+        val bytes = executarDigestBytes("/ISAPI/AccessControl/CaptureCardInfo", "GET", null)
+        val texto = String(bytes)
+        val numero = Regex("<cardNo>(.*?)</cardNo>").find(texto)?.groupValues?.get(1)?.trim()
+            ?: Regex("\"cardNo\"\\s*:\\s*\"(.*?)\"").find(texto)?.groupValues?.get(1)?.trim()
+            ?: ""
+        if (numero.isBlank()) throw IsapiException("Captura de cartão sem número: ${texto.take(300)}")
+        return numero
+    }
+
+    fun cadastrarDigital(u: UsuarioCadastro) {
+        if (u.digitalBase64.isBlank()) return
+        val json = """
+            {"FingerPrintCfg":{"employeeNo":"${u.employeeNo}","enableCardReader":[1],"fingerPrintID":1,"fingerType":"normalFP","fingerData":"${u.digitalBase64}"}}
+        """.trimIndent()
+        val body = json.toRequestBody("application/json".toMediaType())
+        val resposta = executarComDigest("/ISAPI/AccessControl/FingerPrint/SetUp?format=json", "POST", body)
+        validarResposta(resposta, "Cadastrar digital")
+    }
 }
